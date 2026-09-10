@@ -1,29 +1,32 @@
 package com.senademirci.futbolyoklama.util
 
-import kotlinx.datetime.Clock
 import kotlinx.datetime.DatePeriod
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.atStartOfDayIn
-import kotlinx.datetime.Instant
 import kotlinx.datetime.minus
-import kotlinx.datetime.todayIn
 import kotlinx.datetime.toLocalDateTime
+import kotlin.time.Clock
+import kotlin.time.ExperimentalTime
+import kotlin.time.Instant
 
-/** Uygulama boyunca tarihler "yyyy-MM-dd" metni olarak taşınır — Firestore'da sıralanabilir. */
+/**
+ * Uygulama boyunca tarihler "yyyy-MM-dd" metni olarak taşınır — Firestore'da sıralanabilir.
+ *
+ * Saat kaynağı olarak `kotlin.time.Clock` kullanılır; `kotlinx.datetime.Clock` artık
+ * buna taşındı ve iOS/Native tarafında çözülmüyor.
+ */
+@OptIn(ExperimentalTime::class)
 object DateUtil {
 
-    fun today(): String = Clock.System.todayIn(TimeZone.currentSystemDefault()).toString()
+    private fun todayLocal(): LocalDate =
+        Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date
 
-    fun daysAgo(days: Int): String =
-        Clock.System.todayIn(TimeZone.currentSystemDefault())
-            .minus(DatePeriod(days = days))
-            .toString()
+    fun today(): String = todayLocal().toString()
 
-    fun monthsAgo(months: Int): String =
-        Clock.System.todayIn(TimeZone.currentSystemDefault())
-            .minus(DatePeriod(months = months))
-            .toString()
+    fun daysAgo(days: Int): String = todayLocal().minus(DatePeriod(days = days)).toString()
+
+    fun monthsAgo(months: Int): String = todayLocal().minus(DatePeriod(months = months)).toString()
 
     private val monthNames = listOf(
         "Ocak", "Şubat", "Mart", "Nisan", "Mayıs", "Haziran",
@@ -37,22 +40,22 @@ object DateUtil {
     /** "2026-09-10" -> "10 Eylül 2026 Perşembe" */
     fun formatLong(isoDate: String): String = runCatching {
         val d = LocalDate.parse(isoDate)
-        "${d.dayOfMonth} ${monthNames[d.monthNumber - 1]} ${d.year} ${dayNames[d.dayOfWeek.ordinal]}"
+        "${d.day} ${monthNames[d.month.ordinal]} ${d.year} ${dayNames[d.dayOfWeek.ordinal]}"
     }.getOrDefault(isoDate)
 
     /** "2026-09-10" -> "10 Eylül" */
     fun formatShort(isoDate: String): String = runCatching {
         val d = LocalDate.parse(isoDate)
-        "${d.dayOfMonth} ${monthNames[d.monthNumber - 1]}"
+        "${d.day} ${monthNames[d.month.ordinal]}"
     }.getOrDefault(isoDate)
 
     /** Doğum tarihinden bugünkü yaş. */
     fun ageFrom(isoBirthDate: String?): Int? = runCatching {
         val b = LocalDate.parse(isoBirthDate ?: return null)
-        val today = Clock.System.todayIn(TimeZone.currentSystemDefault())
+        val today = todayLocal()
         var age = today.year - b.year
-        if (today.monthNumber < b.monthNumber ||
-            (today.monthNumber == b.monthNumber && today.dayOfMonth < b.dayOfMonth)
+        if (today.month.ordinal < b.month.ordinal ||
+            (today.month.ordinal == b.month.ordinal && today.day < b.day)
         ) age--
         age.takeIf { it >= 0 }
     }.getOrNull()
