@@ -38,3 +38,7 @@ alır ve gelmeyen öğrencileri tek ekranda görür.
 - `firestore.indexes.json` — gereken composite index'ler.
 
 Veri modeli ve faz planı için `docs/PLAN.md` dosyasına bak.
+
+## Lisans
+
+MIT — ayrıntılar için `LICENSE` dosyasına bak.
