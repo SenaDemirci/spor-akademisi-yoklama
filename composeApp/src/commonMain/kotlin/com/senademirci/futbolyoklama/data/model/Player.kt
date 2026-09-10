@@ -3,6 +3,7 @@ package com.senademirci.futbolyoklama.data.model
 data class Player(
     val id: String = "",
     val ownerUid: String = "",
+    val clubId: String = "",
     val teamId: String = "",
     val firstName: String = "",
     val lastName: String = "",

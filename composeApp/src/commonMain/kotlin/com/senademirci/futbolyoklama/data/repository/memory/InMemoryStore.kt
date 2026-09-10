@@ -1,7 +1,9 @@
 package com.senademirci.futbolyoklama.data.repository.memory
 
 import com.senademirci.futbolyoklama.data.model.AttendanceRecord
+import com.senademirci.futbolyoklama.data.model.Club
 import com.senademirci.futbolyoklama.data.model.Coach
+import com.senademirci.futbolyoklama.data.model.DuesRecord
 import com.senademirci.futbolyoklama.data.model.Player
 import com.senademirci.futbolyoklama.data.model.Team
 import com.senademirci.futbolyoklama.data.model.TrainingSession
@@ -17,10 +19,12 @@ import kotlin.random.Random
 class InMemoryStore {
     /** uid -> (koç, şifre). Şifre sadece bellek içi giriş taklidi için tutulur. */
     val coaches = MutableStateFlow<Map<String, Pair<Coach, String>>>(emptyMap())
+    val clubs = MutableStateFlow<List<Club>>(emptyList())
     val teams = MutableStateFlow<List<Team>>(emptyList())
     val players = MutableStateFlow<List<Player>>(emptyList())
     val sessions = MutableStateFlow<List<TrainingSession>>(emptyList())
     val records = MutableStateFlow<List<AttendanceRecord>>(emptyList())
+    val dues = MutableStateFlow<List<DuesRecord>>(emptyList())
 
     fun newId(prefix: String): String =
         "$prefix-${Random.nextLong(1_000_000_000L, 9_999_999_999L)}"

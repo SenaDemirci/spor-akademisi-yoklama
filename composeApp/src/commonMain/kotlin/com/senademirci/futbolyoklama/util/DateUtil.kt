@@ -72,4 +72,43 @@ object DateUtil {
 
     fun epochMillisToIso(millis: Long): String =
         Instant.fromEpochMilliseconds(millis).toLocalDateTime(TimeZone.UTC).date.toString()
+
+    // ---- Aidat ayları ("yyyy-MM") ----
+
+    /** İçinde bulunulan ay, "yyyy-MM". */
+    fun currentPeriod(): String = periodOf(todayLocal())
+
+    fun periodOf(date: LocalDate): String =
+        "${date.year}-${date.month.ordinal.plus(1).toString().padStart(2, '0')}"
+
+    fun periodOfIsoDate(isoDate: String): String =
+        runCatching { periodOf(LocalDate.parse(isoDate)) }.getOrDefault(currentPeriod())
+
+    /** "2026-09" -> "Eylül 2026" */
+    fun periodLabel(period: String): String = runCatching {
+        val (y, m) = period.split("-")
+        "${monthNames[m.toInt() - 1]} $y"
+    }.getOrDefault(period)
+
+    /** Ayı [delta] kadar kaydırır: shiftPeriod("2026-09", -1) == "2026-08" */
+    fun shiftPeriod(period: String, delta: Int): String = runCatching {
+        val (y, m) = period.split("-").map { it.toInt() }
+        val total = y * 12 + (m - 1) + delta
+        val ny = total / 12
+        val nm = total % 12 + 1
+        "$ny-${nm.toString().padStart(2, '0')}"
+    }.getOrDefault(period)
+
+    /** [start]'tan [end]'e kadar (ikisi dahil) tüm aylar. Sıra bozuksa boş liste. */
+    fun periodsBetween(start: String, end: String): List<String> {
+        if (start.isBlank() || end.isBlank() || start > end) return emptyList()
+        val result = mutableListOf<String>()
+        var p = start
+        // Makul bir üst sınır: 10 sezon
+        while (p <= end && result.size < 120) {
+            result += p
+            p = shiftPeriod(p, 1)
+        }
+        return result
+    }
 }

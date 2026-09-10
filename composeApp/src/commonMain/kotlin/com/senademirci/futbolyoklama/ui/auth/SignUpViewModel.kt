@@ -11,7 +11,6 @@ import kotlinx.coroutines.launch
 
 data class SignUpUiState(
     val name: String = "",
-    val teamName: String = "",
     val email: String = "",
     val password: String = "",
     val isSubmitting: Boolean = false,
@@ -20,7 +19,7 @@ data class SignUpUiState(
     val passwordTooShort: Boolean get() = password.isNotEmpty() && password.length < 6
 
     val canSubmit: Boolean
-        get() = name.isNotBlank() && teamName.isNotBlank() && email.isNotBlank() &&
+        get() = name.isNotBlank() && email.isNotBlank() &&
             password.length >= 6 && !isSubmitting
 }
 
@@ -30,7 +29,6 @@ class SignUpViewModel(private val authRepository: AuthRepository) : ViewModel() 
     val state: StateFlow<SignUpUiState> = _state.asStateFlow()
 
     fun onNameChange(v: String) = _state.update { it.copy(name = v, error = null) }
-    fun onTeamNameChange(v: String) = _state.update { it.copy(teamName = v, error = null) }
     fun onEmailChange(v: String) = _state.update { it.copy(email = v, error = null) }
     fun onPasswordChange(v: String) = _state.update { it.copy(password = v, error = null) }
 
@@ -39,7 +37,7 @@ class SignUpViewModel(private val authRepository: AuthRepository) : ViewModel() 
         _state.update { it.copy(isSubmitting = true, error = null) }
         viewModelScope.launch {
             val s = _state.value
-            val result = authRepository.signUp(s.name, s.email, s.password, s.teamName)
+            val result = authRepository.signUp(s.name, s.email, s.password)
             _state.update {
                 it.copy(isSubmitting = false, error = result.exceptionOrNull()?.message)
             }

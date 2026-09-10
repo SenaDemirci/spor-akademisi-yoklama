@@ -3,7 +3,7 @@ package com.senademirci.futbolyoklama.ui.roster
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.senademirci.futbolyoklama.data.model.Player
-import com.senademirci.futbolyoklama.data.repository.AuthRepository
+import com.senademirci.futbolyoklama.data.repository.ClubRepository
 import com.senademirci.futbolyoklama.data.repository.PlayerRepository
 import com.senademirci.futbolyoklama.util.DateUtil
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -38,18 +38,22 @@ data class PlayerEditUiState(
 }
 
 class PlayerEditViewModel(
-    private val authRepository: AuthRepository,
+    private val clubRepository: ClubRepository,
     private val playerRepository: PlayerRepository,
 ) : ViewModel() {
+
+    private var teamId: String = ""
+
 
     private val _state = MutableStateFlow(PlayerEditUiState())
     val state: StateFlow<PlayerEditUiState> = _state.asStateFlow()
 
     private var loaded = false
 
-    fun load(playerId: String?) {
+    fun load(teamId: String, playerId: String?) {
         if (loaded) return
         loaded = true
+        this.teamId = teamId
         if (playerId == null) return
         viewModelScope.launch {
             val player = playerRepository.observePlayer(playerId).first() ?: return@launch
@@ -77,15 +81,20 @@ class PlayerEditViewModel(
 
     fun save() {
         if (!_state.value.canSubmit) return
-        val coach = authRepository.currentCoach.value ?: return
         _state.update { it.copy(isSubmitting = true, error = null) }
 
         viewModelScope.launch {
+            val team = clubRepository.observeTeam(teamId).first()
+            if (team == null) {
+                _state.update { it.copy(isSubmitting = false, error = "Takım bulunamadı.") }
+                return@launch
+            }
             val s = _state.value
             val player = Player(
                 id = s.playerId.orEmpty(),
-                ownerUid = coach.uid,
-                teamId = coach.teamId,
+                ownerUid = team.ownerUid,
+                clubId = team.clubId,
+                teamId = team.id,
                 firstName = s.firstName.trim(),
                 lastName = s.lastName.trim(),
                 birthDate = s.birthDate.trim().takeIf { it.isNotBlank() },

@@ -39,6 +39,7 @@ import org.koin.compose.viewmodel.koinViewModel
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PlayerEditScreen(
+    teamId: String,
     playerId: String?,
     onBack: () -> Unit,
     viewModel: PlayerEditViewModel = koinViewModel(),
@@ -46,14 +47,14 @@ fun PlayerEditScreen(
     val state by viewModel.state.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
 
-    LaunchedEffect(playerId) { viewModel.load(playerId) }
+    LaunchedEffect(teamId, playerId) { viewModel.load(teamId, playerId) }
     LaunchedEffect(state.isSaved) { if (state.isSaved) onBack() }
     LaunchedEffect(state.error) { state.error?.let { snackbarHostState.showSnackbar(it) } }
 
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(if (state.isEditing) "Öğrenciyi düzenle" else "Öğrenci ekle") },
+                title = { Text(if (state.isEditing) "Futbolcuyu düzenle" else "Futbolcu ekle") },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Geri")
@@ -155,7 +156,7 @@ fun PlayerEditScreen(
                         color = MaterialTheme.colorScheme.onPrimary,
                     )
                 } else {
-                    Text(if (state.isEditing) "Değişiklikleri kaydet" else "Öğrenciyi ekle")
+                    Text(if (state.isEditing) "Değişiklikleri kaydet" else "Futbolcuyu ekle")
                 }
             }
         }

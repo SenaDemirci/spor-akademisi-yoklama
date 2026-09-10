@@ -10,6 +10,9 @@ interface PlayerRepository {
     /** Arşivlenmiş öğrenciler dahil hepsi — rapor geçmişi için gerekir. */
     fun observeAll(teamId: String): Flow<List<Player>>
 
+    /** Koçun bütün öğrencileri (tüm kulüp ve takımlar) — anasayfa özetleri için. */
+    fun observeAllForOwner(): Flow<List<Player>>
+
     fun observePlayer(playerId: String): Flow<Player?>
 
     suspend fun upsert(player: Player): Result<String>

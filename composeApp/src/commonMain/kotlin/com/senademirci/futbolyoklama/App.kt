@@ -20,6 +20,9 @@ import com.senademirci.futbolyoklama.ui.attendance.SessionHistoryScreen
 import com.senademirci.futbolyoklama.ui.attendance.TakeAttendanceScreen
 import com.senademirci.futbolyoklama.ui.auth.LoginScreen
 import com.senademirci.futbolyoklama.ui.auth.SignUpScreen
+import com.senademirci.futbolyoklama.ui.club.ClubDetailScreen
+import com.senademirci.futbolyoklama.ui.dues.DuesScreen
+import com.senademirci.futbolyoklama.ui.home.HomeScreen
 import com.senademirci.futbolyoklama.ui.report.AbsenceReportScreen
 import com.senademirci.futbolyoklama.ui.roster.PlayerDetailScreen
 import com.senademirci.futbolyoklama.ui.roster.PlayerEditScreen
@@ -64,53 +67,87 @@ private fun AuthNavHost(navController: NavHostController = rememberNavController
 
 @Composable
 private fun MainNavHost(navController: NavHostController = rememberNavController()) {
-    NavHost(navController = navController, startDestination = Route.Roster) {
+    NavHost(navController = navController, startDestination = Route.Home) {
 
-        composable<Route.Roster> {
-            RosterScreen(
-                onAddPlayer = { navController.navigate(Route.PlayerEdit()) },
-                onEditPlayer = { navController.navigate(Route.PlayerEdit(it)) },
-                onOpenPlayer = { navController.navigate(Route.PlayerDetail(it)) },
-                onTakeAttendance = { navController.navigate(Route.TakeAttendance()) },
-                onOpenHistory = { navController.navigate(Route.SessionHistory) },
-                onOpenReport = { navController.navigate(Route.AbsenceReport) },
+        composable<Route.Home> {
+            HomeScreen(
+                onOpenClub = { navController.navigate(Route.ClubDetail(it)) },
                 onOpenSettings = { navController.navigate(Route.Settings) },
             )
         }
 
-        composable<Route.PlayerEdit> { backStackEntry ->
+        composable<Route.ClubDetail> { entry ->
+            ClubDetailScreen(
+                clubId = entry.toRoute<Route.ClubDetail>().clubId,
+                onBack = { navController.popBackStack() },
+                onOpenTeam = { navController.navigate(Route.Roster(it)) },
+            )
+        }
+
+        composable<Route.Roster> { entry ->
+            val teamId = entry.toRoute<Route.Roster>().teamId
+            RosterScreen(
+                teamId = teamId,
+                onBack = { navController.popBackStack() },
+                onAddPlayer = { navController.navigate(Route.PlayerEdit(teamId)) },
+                onEditPlayer = { navController.navigate(Route.PlayerEdit(teamId, it)) },
+                onOpenPlayer = { navController.navigate(Route.PlayerDetail(it)) },
+                onTakeAttendance = { navController.navigate(Route.TakeAttendance(teamId)) },
+                onOpenDues = { navController.navigate(Route.Dues(teamId)) },
+                onOpenHistory = { navController.navigate(Route.SessionHistory(teamId)) },
+                onOpenReport = { navController.navigate(Route.AbsenceReport(teamId)) },
+            )
+        }
+
+        composable<Route.PlayerEdit> { entry ->
+            val route = entry.toRoute<Route.PlayerEdit>()
             PlayerEditScreen(
-                playerId = backStackEntry.toRoute<Route.PlayerEdit>().playerId,
+                teamId = route.teamId,
+                playerId = route.playerId,
                 onBack = { navController.popBackStack() },
             )
         }
 
-        composable<Route.PlayerDetail> { backStackEntry ->
+        composable<Route.PlayerDetail> { entry ->
             PlayerDetailScreen(
-                playerId = backStackEntry.toRoute<Route.PlayerDetail>().playerId,
+                playerId = entry.toRoute<Route.PlayerDetail>().playerId,
                 onBack = { navController.popBackStack() },
-                onEdit = { navController.navigate(Route.PlayerEdit(it)) },
+                onEdit = { teamId, playerId ->
+                    navController.navigate(Route.PlayerEdit(teamId, playerId))
+                },
             )
         }
 
-        composable<Route.TakeAttendance> { backStackEntry ->
+        composable<Route.TakeAttendance> { entry ->
+            val route = entry.toRoute<Route.TakeAttendance>()
             TakeAttendanceScreen(
-                sessionId = backStackEntry.toRoute<Route.TakeAttendance>().sessionId,
+                teamId = route.teamId,
+                sessionId = route.sessionId,
                 onBack = { navController.popBackStack() },
             )
         }
 
-        composable<Route.SessionHistory> {
+        composable<Route.SessionHistory> { entry ->
+            val teamId = entry.toRoute<Route.SessionHistory>().teamId
             SessionHistoryScreen(
+                teamId = teamId,
                 onBack = { navController.popBackStack() },
-                onOpenSession = { navController.navigate(Route.TakeAttendance(it)) },
+                onOpenSession = { navController.navigate(Route.TakeAttendance(teamId, it)) },
             )
         }
 
-        composable<Route.AbsenceReport> {
+        composable<Route.AbsenceReport> { entry ->
             AbsenceReportScreen(
+                teamId = entry.toRoute<Route.AbsenceReport>().teamId,
                 onBack = { navController.popBackStack() },
                 onOpenPlayer = { navController.navigate(Route.PlayerDetail(it)) },
+            )
+        }
+
+        composable<Route.Dues> { entry ->
+            DuesScreen(
+                teamId = entry.toRoute<Route.Dues>().teamId,
+                onBack = { navController.popBackStack() },
             )
         }
 

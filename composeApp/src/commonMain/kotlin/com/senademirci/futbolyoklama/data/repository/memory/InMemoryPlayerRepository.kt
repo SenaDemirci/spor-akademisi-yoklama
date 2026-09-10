@@ -1,14 +1,21 @@
 package com.senademirci.futbolyoklama.data.repository.memory
 
 import com.senademirci.futbolyoklama.data.model.Player
+import com.senademirci.futbolyoklama.data.repository.AuthRepository
+import com.senademirci.futbolyoklama.util.turkishSortKey
 import com.senademirci.futbolyoklama.data.repository.PlayerRepository
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
 
-class InMemoryPlayerRepository(private val store: InMemoryStore) : PlayerRepository {
+class InMemoryPlayerRepository(
+    private val store: InMemoryStore,
+    private val authRepository: AuthRepository,
+) : PlayerRepository {
 
-    private val byName = compareBy<Player>({ it.lastName.lowercase() }, { it.firstName.lowercase() })
+    private val byName =
+        compareBy<Player>({ turkishSortKey(it.lastName) }, { turkishSortKey(it.firstName) })
 
     override fun observeRoster(teamId: String): Flow<List<Player>> =
         store.players.map { list ->
@@ -17,6 +24,11 @@ class InMemoryPlayerRepository(private val store: InMemoryStore) : PlayerReposit
 
     override fun observeAll(teamId: String): Flow<List<Player>> =
         store.players.map { list -> list.filter { it.teamId == teamId }.sortedWith(byName) }
+
+    override fun observeAllForOwner(): Flow<List<Player>> =
+        combine(store.players, authRepository.currentCoach) { players, coach ->
+            if (coach == null) emptyList() else players.filter { it.ownerUid == coach.uid }
+        }
 
     override fun observePlayer(playerId: String): Flow<Player?> =
         store.players.map { list -> list.firstOrNull { it.id == playerId } }
@@ -49,6 +61,7 @@ class InMemoryPlayerRepository(private val store: InMemoryStore) : PlayerReposit
     override suspend fun deletePermanently(playerId: String): Result<Unit> {
         store.players.update { list -> list.filterNot { it.id == playerId } }
         store.records.update { list -> list.filterNot { it.playerId == playerId } }
+        store.dues.update { list -> list.filterNot { it.playerId == playerId } }
         return Result.success(Unit)
     }
 }

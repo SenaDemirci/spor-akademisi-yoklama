@@ -5,7 +5,6 @@ import androidx.lifecycle.viewModelScope
 import com.senademirci.futbolyoklama.data.model.AttendanceStatus
 import com.senademirci.futbolyoklama.data.model.Player
 import com.senademirci.futbolyoklama.data.repository.AttendanceRepository
-import com.senademirci.futbolyoklama.data.repository.AuthRepository
 import com.senademirci.futbolyoklama.data.repository.PlayerRepository
 import com.senademirci.futbolyoklama.util.DateUtil
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -38,23 +37,25 @@ data class TakeAttendanceUiState(
 }
 
 class TakeAttendanceViewModel(
-    private val authRepository: AuthRepository,
     private val playerRepository: PlayerRepository,
     private val attendanceRepository: AttendanceRepository,
 ) : ViewModel() {
+
+    private var teamId: String = ""
+
 
     private val _state = MutableStateFlow(TakeAttendanceUiState())
     val state: StateFlow<TakeAttendanceUiState> = _state.asStateFlow()
 
     private var loaded = false
 
-    fun load(sessionId: String?) {
+    fun load(teamId: String, sessionId: String?) {
         if (loaded) return
         loaded = true
-        val coach = authRepository.currentCoach.value ?: return
+        this.teamId = teamId
 
         viewModelScope.launch {
-            val players = playerRepository.observeRoster(coach.teamId).first()
+            val players = playerRepository.observeRoster(teamId).first()
 
             if (sessionId == null) {
                 // Yeni yoklama: herkes varsayılan olarak "Var". Koç yalnızca gelmeyenlere dokunur.
@@ -106,9 +107,8 @@ class TakeAttendanceViewModel(
     }
 
     private fun checkExistingSession(date: String) {
-        val coach = authRepository.currentCoach.value ?: return
         viewModelScope.launch {
-            val existing = attendanceRepository.findSessionByDate(coach.teamId, date)
+            val existing = attendanceRepository.findSessionByDate(teamId, date)
             _state.update { it.copy(existingSessionIdForDate = existing?.id) }
         }
     }
@@ -118,7 +118,7 @@ class TakeAttendanceViewModel(
         val existingId = _state.value.existingSessionIdForDate ?: return
         loaded = false
         _state.value = TakeAttendanceUiState(date = _state.value.date)
-        load(existingId)
+        load(teamId, existingId)
     }
 
     fun dismissExistingSessionWarning() =
@@ -127,13 +127,12 @@ class TakeAttendanceViewModel(
     fun save() {
         val s = _state.value
         if (!s.canSubmit) return
-        val coach = authRepository.currentCoach.value ?: return
 
         _state.update { it.copy(isSubmitting = true, error = null) }
         viewModelScope.launch {
             val result = attendanceRepository.saveAttendance(
                 sessionId = s.sessionId,
-                teamId = coach.teamId,
+                teamId = teamId,
                 date = s.date,
                 note = s.note.trim(),
                 statuses = s.statuses,

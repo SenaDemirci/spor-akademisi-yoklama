@@ -5,7 +5,6 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -16,17 +15,11 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.material3.TopAppBar
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -39,15 +32,6 @@ fun SettingsScreen(
     viewModel: SettingsViewModel = koinViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
-    var teamNameDraft by remember { mutableStateOf("") }
-    var initialized by remember { mutableStateOf(false) }
-
-    LaunchedEffect(state.teamName) {
-        if (!initialized && state.teamName.isNotBlank()) {
-            teamNameDraft = state.teamName
-            initialized = true
-        }
-    }
 
     Scaffold(
         topBar = {
@@ -62,11 +46,7 @@ fun SettingsScreen(
         },
     ) { innerPadding ->
         Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(innerPadding)
-                .imePadding()
-                .padding(16.dp),
+            modifier = Modifier.fillMaxSize().padding(innerPadding).padding(16.dp),
         ) {
             Text("Koç", style = MaterialTheme.typography.labelLarge)
             Text(state.coachName, style = MaterialTheme.typography.bodyLarge)
@@ -76,24 +56,8 @@ fun SettingsScreen(
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
 
-            Spacer(Modifier.height(24.dp))
+            Spacer(Modifier.height(20.dp))
             HorizontalDivider()
-            Spacer(Modifier.height(24.dp))
-
-            OutlinedTextField(
-                value = teamNameDraft,
-                onValueChange = { teamNameDraft = it },
-                label = { Text("Takım adı") },
-                singleLine = true,
-                modifier = Modifier.fillMaxWidth(),
-            )
-            Spacer(Modifier.height(8.dp))
-            TextButton(
-                onClick = { viewModel.updateTeamName(teamNameDraft) },
-                enabled = teamNameDraft.isNotBlank() && teamNameDraft != state.teamName,
-            ) {
-                Text("Takım adını kaydet")
-            }
 
             Spacer(Modifier.weight(1f))
 

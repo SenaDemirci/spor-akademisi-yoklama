@@ -6,9 +6,9 @@ import com.senademirci.futbolyoklama.data.model.AttendanceRecord
 import com.senademirci.futbolyoklama.data.model.AttendanceStatus
 import com.senademirci.futbolyoklama.data.model.Player
 import com.senademirci.futbolyoklama.data.repository.AttendanceRepository
-import com.senademirci.futbolyoklama.data.repository.AuthRepository
 import com.senademirci.futbolyoklama.data.repository.PlayerRepository
 import com.senademirci.futbolyoklama.util.DateUtil
+import com.senademirci.futbolyoklama.util.turkishSortKey
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -70,28 +70,25 @@ data class AbsenceTodayItem(
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class AbsenceReportViewModel(
-    private val authRepository: AuthRepository,
     private val playerRepository: PlayerRepository,
     private val attendanceRepository: AttendanceRepository,
 ) : ViewModel() {
 
+    private val teamId = MutableStateFlow<String?>(null)
     private val range = MutableStateFlow(ReportRange.LAST_MONTH)
 
-    private val recordsAndPlayers = combine(
-        authRepository.currentCoach,
-        range,
-    ) { coach, r -> coach to r }
-        .flatMapLatest { (coach, r) ->
-            if (coach == null) {
+    private val recordsAndPlayers = combine(teamId, range) { id, r -> id to r }
+        .flatMapLatest { (id, r) ->
+            if (id == null) {
                 flowOf(Triple(emptyList<AttendanceRecord>(), emptyList<Player>(), r))
             } else {
                 combine(
                     attendanceRepository.observeRecordsInRange(
-                        teamId = coach.teamId,
+                        teamId = id,
                         fromDate = r.fromDate(),
                         toDate = DateUtil.today(),
                     ),
-                    playerRepository.observeAll(coach.teamId),
+                    playerRepository.observeAll(id),
                 ) { records, players -> Triple(records, players, r) }
             }
         }
@@ -123,7 +120,7 @@ class AbsenceReportViewModel(
         }.sortedWith(
             compareByDescending<AbsenceSummary> { it.absenceRate }
                 .thenByDescending { it.absent }
-                .thenBy { it.player.lastName.lowercase() },
+                .thenBy { turkishSortKey(it.player.lastName) },
         )
 
         val today = DateUtil.today()
@@ -140,7 +137,7 @@ class AbsenceReportViewModel(
             }
             .sortedWith(
                 compareBy<AbsenceTodayItem> { it.status != AttendanceStatus.ABSENT }
-                    .thenBy { it.player.lastName.lowercase() },
+                    .thenBy { turkishSortKey(it.player.lastName) },
             )
 
         return AbsenceReportUiState(
@@ -150,6 +147,10 @@ class AbsenceReportViewModel(
             sessionCountInRange = records.map { it.sessionId }.distinct().size,
             isLoading = false,
         )
+    }
+
+    fun load(id: String) {
+        teamId.value = id
     }
 
     fun setRange(value: ReportRange) {

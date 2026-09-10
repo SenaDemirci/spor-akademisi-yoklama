@@ -16,6 +16,9 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Checklist
+import androidx.compose.material.icons.filled.Payments
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Assessment
 import androidx.compose.material.icons.filled.Close
@@ -26,6 +29,7 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -42,6 +46,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -61,16 +66,19 @@ import org.koin.compose.viewmodel.koinViewModel
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
 fun RosterScreen(
+    teamId: String,
+    onBack: () -> Unit,
     onAddPlayer: () -> Unit,
     onEditPlayer: (String) -> Unit,
     onOpenPlayer: (String) -> Unit,
     onTakeAttendance: () -> Unit,
+    onOpenDues: () -> Unit,
     onOpenHistory: () -> Unit,
     onOpenReport: () -> Unit,
-    onOpenSettings: () -> Unit,
     viewModel: RosterViewModel = koinViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
+    LaunchedEffect(teamId) { viewModel.load(teamId) }
     var menuForPlayer by remember { mutableStateOf<Player?>(null) }
     var confirmDelete by remember { mutableStateOf<Player?>(null) }
 
@@ -80,15 +88,21 @@ fun RosterScreen(
                 title = {
                     Column {
                         Text(
-                            text = state.teamName.ifBlank { "Kadro" },
+                            text = state.title.ifBlank { "Kadro" },
                             style = MaterialTheme.typography.titleLarge,
                         )
-                        if (state.players.isNotEmpty()) {
-                            Text(
-                                text = "${state.players.size} öğrenci",
-                                style = MaterialTheme.typography.bodySmall,
-                            )
-                        }
+                        Text(
+                            text = listOfNotNull(
+                                state.subtitle.takeIf { it.isNotBlank() },
+                                "${state.players.size} futbolcu".takeIf { state.players.isNotEmpty() },
+                            ).joinToString(" · "),
+                            style = MaterialTheme.typography.bodySmall,
+                        )
+                    }
+                },
+                navigationIcon = {
+                    IconButton(onClick = onBack) {
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Geri")
                     }
                 },
                 actions = {
@@ -98,13 +112,11 @@ fun RosterScreen(
                     IconButton(onClick = onOpenHistory) {
                         Icon(Icons.Default.History, contentDescription = "Antrenman geçmişi")
                     }
-                    IconButton(onClick = onOpenSettings) {
-                        Icon(Icons.Default.Settings, contentDescription = "Ayarlar")
-                    }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = MaterialTheme.colorScheme.primary,
                     titleContentColor = MaterialTheme.colorScheme.onPrimary,
+                    navigationIconContentColor = MaterialTheme.colorScheme.onPrimary,
                     actionIconContentColor = MaterialTheme.colorScheme.onPrimary,
                 ),
             )
@@ -117,18 +129,32 @@ fun RosterScreen(
     ) { innerPadding ->
         Column(modifier = Modifier.fillMaxSize().padding(innerPadding)) {
 
-            Button(
-                onClick = onTakeAttendance,
-                enabled = state.players.isNotEmpty() || state.query.isNotBlank(),
+            Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 12.dp)
-                    .height(56.dp),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = MaterialTheme.colorScheme.primary,
-                ),
+                    .padding(horizontal = 16.dp, vertical = 12.dp),
+                horizontalArrangement = Arrangement.spacedBy(10.dp),
             ) {
-                Text("Yoklama Al", style = MaterialTheme.typography.titleMedium)
+                Button(
+                    onClick = onTakeAttendance,
+                    enabled = state.players.isNotEmpty(),
+                    modifier = Modifier.weight(1f).height(56.dp),
+                    contentPadding = PaddingValues(horizontal = 8.dp),
+                ) {
+                    Icon(Icons.Default.Checklist, contentDescription = null)
+                    Spacer(Modifier.width(6.dp))
+                    Text("Yoklama Al", maxLines = 1)
+                }
+                OutlinedButton(
+                    onClick = onOpenDues,
+                    enabled = state.players.isNotEmpty(),
+                    modifier = Modifier.weight(1f).height(56.dp),
+                    contentPadding = PaddingValues(horizontal = 8.dp),
+                ) {
+                    Icon(Icons.Default.Payments, contentDescription = null)
+                    Spacer(Modifier.width(6.dp))
+                    Text("Aidat bilgileri", maxLines = 1)
+                }
             }
 
             OutlinedTextField(
@@ -153,8 +179,8 @@ fun RosterScreen(
                 state.isEmpty -> EmptyState(
                     emoji = "👥",
                     title = "Kadro boş",
-                    message = "Sağ alttaki + düğmesiyle ilk öğrencini ekle.",
-                    actionLabel = "Öğrenci ekle",
+                    message = "Sağ alttaki + düğmesiyle ilk futbolcunu ekle.",
+                    actionLabel = "Futbolcu ekle",
                     onAction = onAddPlayer,
                 )
 

@@ -86,17 +86,6 @@ fun SignUpScreen(
             Spacer(Modifier.height(12.dp))
 
             OutlinedTextField(
-                value = state.teamName,
-                onValueChange = viewModel::onTeamNameChange,
-                label = { Text("Takım adı") },
-                placeholder = { Text("örn. U13 Grubu") },
-                singleLine = true,
-                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
-                modifier = fieldModifier,
-            )
-            Spacer(Modifier.height(12.dp))
-
-            OutlinedTextField(
                 value = state.email,
                 onValueChange = viewModel::onEmailChange,
                 label = { Text("E-posta") },

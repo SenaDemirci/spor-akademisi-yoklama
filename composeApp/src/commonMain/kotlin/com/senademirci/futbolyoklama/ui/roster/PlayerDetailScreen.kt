@@ -49,7 +49,7 @@ import org.koin.compose.viewmodel.koinViewModel
 fun PlayerDetailScreen(
     playerId: String,
     onBack: () -> Unit,
-    onEdit: (String) -> Unit,
+    onEdit: (teamId: String, playerId: String) -> Unit,
     viewModel: PlayerDetailViewModel = koinViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -68,7 +68,7 @@ fun PlayerDetailScreen(
                 },
                 actions = {
                     if (player != null) {
-                        IconButton(onClick = { onEdit(player.id) }) {
+                        IconButton(onClick = { onEdit(player.teamId, player.id) }) {
                             Icon(Icons.Default.Edit, contentDescription = "Düzenle")
                         }
                     }
@@ -196,7 +196,7 @@ fun PlayerDetailScreen(
                 Text(if (player.isActive) "Kadrodan çıkar" else "Kadroya geri al")
             }
             Text(
-                text = "Kadrodan çıkarılan öğrencinin geçmiş yoklamaları korunur.",
+                text = "Kadrodan çıkarılan futbolcunun geçmiş yoklamaları korunur.",
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.padding(top = 6.dp),

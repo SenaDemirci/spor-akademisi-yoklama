@@ -59,6 +59,7 @@ import org.koin.compose.viewmodel.koinViewModel
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TakeAttendanceScreen(
+    teamId: String,
     sessionId: String?,
     onBack: () -> Unit,
     viewModel: TakeAttendanceViewModel = koinViewModel(),
@@ -67,7 +68,7 @@ fun TakeAttendanceScreen(
     val snackbarHostState = remember { SnackbarHostState() }
     var showDatePicker by remember { mutableStateOf(false) }
 
-    LaunchedEffect(sessionId) { viewModel.load(sessionId) }
+    LaunchedEffect(teamId, sessionId) { viewModel.load(teamId, sessionId) }
     LaunchedEffect(state.isSaved) { if (state.isSaved) onBack() }
     LaunchedEffect(state.error) { state.error?.let { snackbarHostState.showSnackbar(it) } }
 
@@ -136,8 +137,8 @@ fun TakeAttendanceScreen(
             if (state.players.isEmpty() && !state.isLoading) {
                 EmptyState(
                     emoji = "👥",
-                    title = "Kadroda öğrenci yok",
-                    message = "Yoklama alabilmek için önce kadroya öğrenci ekle.",
+                    title = "Kadroda futbolcu yok",
+                    message = "Yoklama alabilmek için önce kadroya futbolcu ekle.",
                 )
                 return@Column
             }

@@ -28,6 +28,7 @@ import androidx.compose.material3.PrimaryTabRow
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
@@ -47,11 +48,13 @@ import org.koin.compose.viewmodel.koinViewModel
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AbsenceReportScreen(
+    teamId: String,
     onBack: () -> Unit,
     onOpenPlayer: (String) -> Unit,
     viewModel: AbsenceReportViewModel = koinViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
+    LaunchedEffect(teamId) { viewModel.load(teamId) }
     var selectedTab by remember { mutableIntStateOf(0) }
 
     Scaffold(
@@ -103,7 +106,7 @@ fun AbsenceReportScreen(
                     else -> {
                         Text(
                             text = "${state.sessionCountInRange} antrenman · " +
-                                "${state.withAbsences.size} öğrencinin devamsızlığı var",
+                                "${state.withAbsences.size} futbolcunun devamsızlığı var",
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
@@ -121,7 +124,7 @@ fun AbsenceReportScreen(
                     EmptyState(
                         emoji = "✅",
                         title = "Bugün eksik yok",
-                        message = "Bugünkü antrenmanda gelmeyen ya da izinli öğrenci görünmüyor.",
+                        message = "Bugünkü antrenmanda gelmeyen ya da izinli futbolcu görünmüyor.",
                     )
                 } else {
                     LazyColumn {
