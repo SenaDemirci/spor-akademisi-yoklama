@@ -1,0 +1,18 @@
+*.iml
+.gradle/
+/local.properties
+.idea/
+.DS_Store
+build/
+captures/
+.externalNativeBuild
+.cxx
+local.properties
+xcuserdata/
+**/*.xcodeproj/project.xcworkspace/
+**/Pods/
+/kotlin-js-store/
+
+# Firebase yapılandırma dosyaları — gizli anahtar içerir, repoya girmez
+google-services.json
+GoogleService-Info.plist

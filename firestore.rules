@@ -1,0 +1,46 @@
+rules_version = '2';
+
+// Her belgede ownerUid alanı vardır. Bir koç YALNIZCA kendi ownerUid'sine sahip
+// belgeleri okuyabilir/yazabilir. Böylece koçlar birbirlerinin öğrencilerini göremez.
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function signedIn()    { return request.auth != null; }
+    function owns(res)     { return signedIn() && request.auth.uid == res.data.ownerUid; }
+    function creatingOwn() { return signedIn() && request.auth.uid == request.resource.data.ownerUid; }
+
+    // Koç profili: sadece kendi belgesi
+    match /coaches/{uid} {
+      allow read, write: if signedIn() && request.auth.uid == uid;
+    }
+
+    match /teams/{docId} {
+      allow read, delete: if owns(resource);
+      allow create:       if creatingOwn();
+      allow update:       if owns(resource) && creatingOwn();
+    }
+
+    match /players/{docId} {
+      allow read, delete: if owns(resource);
+      allow create:       if creatingOwn();
+      allow update:       if owns(resource) && creatingOwn();
+    }
+
+    match /sessions/{docId} {
+      allow read, delete: if owns(resource);
+      allow create:       if creatingOwn();
+      allow update:       if owns(resource) && creatingOwn();
+    }
+
+    match /attendance/{docId} {
+      allow read, delete: if owns(resource);
+      allow create:       if creatingOwn();
+      allow update:       if owns(resource) && creatingOwn();
+    }
+
+    // Yukarıda açıkça izin verilmeyen her şey reddedilir.
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
